@@ -1,0 +1,9 @@
+# no build
+/build/*
+# no vscode
+/.vscode/*
+# no clang cache
+/.cache/*
+
+#/samples/tests.cpp
+
