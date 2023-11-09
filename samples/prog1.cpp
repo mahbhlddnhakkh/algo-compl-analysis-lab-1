@@ -1,9 +1,8 @@
 #include "experiment_util.hpp"
-#ifdef EXPERIMENT_PRINT
 #include <iostream>
-#endif
 #include <fstream>
 #include <sstream>
+#include <chrono>
 
 int main(const int argc, const char* argv[])
 {
@@ -12,7 +11,7 @@ int main(const int argc, const char* argv[])
   const char* output_pathB = (argc > 3) ? argv[3] : "output1.B.txt";
   const char sep = ' ';
   std::fstream f(input_path);
-  Point<lab_point_type>* arr1 = nullptr, *arr2 = nullptr;
+  Point<lab_point_type>* arrA = nullptr, *arrB = nullptr;
   size_t n = 0, i = 0, m;
   if (f.is_open())
   {
@@ -21,7 +20,7 @@ int main(const int argc, const char* argv[])
     if (!std::getline(f, line))
     {
       f.close();
-      throw std::string(input_path) + " cannot be empty";
+      throw std::runtime_error(std::string(input_path) + " cannot be empty");
     }
     sstream << line;
     sstream >> n;
@@ -29,9 +28,9 @@ int main(const int argc, const char* argv[])
     if (n <= 0)
     {
       f.close();
-      throw line + " cannot be 0 because it's a size";
+      throw std::runtime_error(line + " cannot be 0 because it's a size");
     }
-    arr1 = new Point<lab_point_type>[n];
+    arrA = new Point<lab_point_type>[n];
     while(std::getline(f, line) && i < n)
     {
       size_t sz = line.length();
@@ -54,7 +53,7 @@ int main(const int argc, const char* argv[])
         }
         sstream >> y;
         sstream.clear();
-        arr1[i] = Point<lab_point_type>(x, y);
+        arrA[i] = Point<lab_point_type>(x, y);
 #ifdef EXPERIMENT_PRINT
         std::cout << arr1[i] << ' ';
 #endif
@@ -68,17 +67,28 @@ int main(const int argc, const char* argv[])
   }
   else
   {
-    throw std::string(input_path) + " not found";
+    throw std::runtime_error(std::string(input_path) + " not found");
   }
-  arr2 = new Point<lab_point_type>[n];
-  std::copy(arr1, arr1+n, arr2);
-  m = conv_sort_3_heap(arr1, n);
-  write_arr_to_file(arr1, m, output_pathA);
-  m = conv_sort_5_merge(arr2, n);
-  write_arr_to_file(arr2, m, output_pathB);
-  if (arr1 != nullptr)
-    delete[] arr1;
-  if (arr2 != nullptr)
-    delete[] arr2;
+  arrB = new Point<lab_point_type>[n];
+  std::copy(arrA, arrA+n, arrB);
+
+  auto start = std::chrono::high_resolution_clock::now();
+  m = conv_sort_3_heap(arrA, n);
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "conv_sort_3_heap done in " << duration.count() << " ms\n";
+  write_arr_to_file(arrA, m, output_pathA);
+
+  start = std::chrono::high_resolution_clock::now();
+  m = conv_sort_5_merge(arrB, n);
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "conv_sort_5_merge done in " << duration.count() << " ms\n";
+  write_arr_to_file(arrB, m, output_pathB);
+
+  if (arrA != nullptr)
+    delete[] arrA;
+  if (arrB != nullptr)
+    delete[] arrB;
   return 0;
 }

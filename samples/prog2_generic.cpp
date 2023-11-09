@@ -12,8 +12,7 @@ int main(const int argc, const char* argv[])
 {
   std::srand(time(0));
   const char* input_path = (argc > 1) ? argv[1] : "input3.txt";
-  const char* output_pathA = (argc > 2) ? argv[2] : "output3.A.txt";
-  const char* output_pathB = (argc > 3) ? argv[3] : "output3.B.txt";
+  const char* output_path = (argc > 2) ? argv[2] : "output3.txt";
   const char sep = ' ';
   std::stringstream sstream;
   
@@ -31,11 +30,11 @@ int main(const int argc, const char* argv[])
   }
   else
   {
-    throw std::string(input_path) + " not found";
+    throw std::runtime_error(std::string(input_path) + " not found");
   }
 
-  std::ofstream outA(output_pathA), outB(output_pathB);
-  if (outA.is_open() && outA.is_open())
+  std::ofstream out(output_path);
+  if (out.is_open())
   {
     for (const auto& e : coms)
     {
@@ -69,30 +68,14 @@ int main(const int argc, const char* argv[])
         sstream >> n;
         sstream.clear();
 
-        do_experiment(q, w, n, outA, outB);
+        do_experiment(q, w, n, out);
       }
     }
-    outA.close();
-    outB.close();
+    out.close();
   }
   else
   {
-    if (!outA.is_open())
-    {
-      if (outB.is_open())
-      {
-        outB.close();
-      }
-      throw std::string(output_pathA) + " unable to write";
-    }
-    else
-    {
-      outA.close();
-    }
-    if (!outB.is_open())
-    {
-      throw std::string(output_pathB) + " unable to write";
-    }
+    throw std::runtime_error(std::string(output_path) + " unable to write");
   }
   return 0;
 }

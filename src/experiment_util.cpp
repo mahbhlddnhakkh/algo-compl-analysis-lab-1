@@ -4,6 +4,17 @@
 #include <iostream>
 #include <cstdlib>
 
+double rand_range(const double& from, const double& to)
+{
+  return rand_range(std::rand(), from, to);
+}
+
+double rand_range(const int& num, const double& from, const double& to)
+{
+  // https://stackoverflow.com/a/2704552
+  return ((static_cast<double>(num) / static_cast<double>(RAND_MAX)) * (to - from)) + from;
+}
+
 void write_arr_to_file(const Point<lab_point_type>* arr, const size_t& n, const char* path)
 {
   size_t i;
@@ -11,6 +22,9 @@ void write_arr_to_file(const Point<lab_point_type>* arr, const size_t& n, const 
   if (out.is_open())
   {
     out << n << '\n';
+#ifdef EXPERIMENT_PRINT
+    std::cout << n << '\n';
+#endif
     for (i = 0; i < n; i++)
     {
       out << arr[i] << '\n';
@@ -36,48 +50,45 @@ void write_arr_to_file(const Point<lab_point_type>* arr, const size_t& n, const 
   }
 }
 
-void do_experiment(const size_t& q, const size_t& w, const size_t& n, std::ofstream& outA, std::ofstream& outB)
+void do_experiment(const size_t& q, const size_t& w, const size_t& n, std::ofstream& out)
 {
-  // alg1 (A) to out1, alg2 (B) to out2
-  // file1: q w n T_A1(n) T_A2(n)
-  // file2: q w n T_B1(n) T_B2(n)
-  // but std::cout : q w n T_A1(n) T_A2(n) T_B1(n) T_B2(n)
-  Point<lab_point_type>* arrA1 = generate_array_type_1(q, w, n), *arrA2 = generate_array_type_2(q, w, n);
-  Point<lab_point_type>* arrB1 = new Point<lab_point_type>[n], *arrB2 = new Point<lab_point_type>[n];
-  std::copy(arrA1, arrA1+n, arrB1);
-  std::copy(arrA2, arrA2+n, arrB2);
-  outA << q << ' ' << w << ' ' << n;
-  outB << q << ' ' << w << ' ' << n;
+  // q w n T1_A(n) T1_B(n) T2_A(n) T2_B(n)
+  // A - 3-heap sort, B - 5-merge sort
+  // T1_X(n) - random array type 1, T2_X(n) - random array type 2
+  // time is in ms
+  Point<lab_point_type>* arr1A = generate_array_type_1(q, w, n), *arr2A = generate_array_type_2(q, w, n);
+  Point<lab_point_type>* arr1B = new Point<lab_point_type>[n], *arr2B = new Point<lab_point_type>[n];
+  std::copy(arr1A, arr1A+n, arr1B);
+  std::copy(arr2A, arr2A+n, arr2B);
+  out << q << ' ' << w << ' ' << n;
 #ifdef EXPERIMENT_PRINT
   std::cout << q << ' ' << w << ' ' << n;
 #endif
 
-  measure_time(arrA1, n, outA, conv_sort_3_heap);
-  measure_time(arrA2, n, outA, conv_sort_3_heap);
-  measure_time(arrB1, n, outB, conv_sort_5_merge);
-  measure_time(arrB2, n, outB, conv_sort_5_merge);
+  measure_conv_time(arr1A, n, out, conv_sort_3_heap);
+  measure_conv_time(arr1B, n, out, conv_sort_5_merge);
+  measure_conv_time(arr2A, n, out, conv_sort_3_heap);
+  measure_conv_time(arr2B, n, out, conv_sort_5_merge);
 
-  outA << '\n';
-  outB << '\n';
+  out << '\n';
 #ifdef EXPERIMENT_PRINT
   std::cout << '\n';
 #endif
 
-  delete[] arrA1;
-  delete[] arrA2;
-  delete[] arrB1;
-  delete[] arrB2;
+  delete[] arr1A;
+  delete[] arr1B;
+  delete[] arr2A;
+  delete[] arr2B;
 }
 
 Point<lab_point_type>* generate_array_type_1(const size_t& q, const size_t& w, const size_t& n)
 {
-  const lab_point_type rand_max_lab = static_cast<lab_point_type>(RAND_MAX);
   Point<lab_point_type>* arr = new Point<lab_point_type>[n];
   for (size_t i = 0; i < n; i++)
   {
     lab_point_type x, y;
-    x = static_cast<lab_point_type>(std::rand()) / rand_max_lab * w;
-    y = static_cast<lab_point_type>(std::rand()) / rand_max_lab * q;
+    x = static_cast<lab_point_type>(rand_range(0.0, static_cast<double>(w)));
+    y = static_cast<lab_point_type>(rand_range(0.0, static_cast<double>(q)));
     arr[i] = Point<lab_point_type>(x, y);
   }
   return arr;
@@ -85,7 +96,6 @@ Point<lab_point_type>* generate_array_type_1(const size_t& q, const size_t& w, c
 
 Point<lab_point_type>* generate_array_type_2(const size_t& q, const size_t& w, const size_t& n)
 {
-  const lab_point_type rand_max_lab = static_cast<lab_point_type>(RAND_MAX);
   const int rand_max_half = RAND_MAX / 2;
   Point<lab_point_type>* arr = new Point<lab_point_type>[n];
   for (size_t i = 0; i < n; i++)
@@ -104,7 +114,7 @@ Point<lab_point_type>* generate_array_type_2(const size_t& q, const size_t& w, c
       {
         y = static_cast<lab_point_type>(0);
       }
-      x = static_cast<lab_point_type>(rand_x) / rand_max_lab * w;
+      x = static_cast<lab_point_type>(rand_range(rand_x, 0.0, static_cast<double>(w)));
     }
     else
     {
@@ -116,13 +126,14 @@ Point<lab_point_type>* generate_array_type_2(const size_t& q, const size_t& w, c
       {
         x = static_cast<lab_point_type>(0);
       }
-      y = static_cast<lab_point_type>(rand_y) / rand_max_lab * q;
+      y = static_cast<lab_point_type>(rand_range(rand_y, 0.0, static_cast<double>(q)));
     }
+    arr[i] = Point<lab_point_type>(x, y);
   }
   return arr;
 }
 
-void measure_time(Point<lab_point_type>* arr, const size_t& n, std::ofstream& out, size_t (*conv_sort_func)(Point<lab_point_type>*, const size_t&))
+void measure_conv_time(Point<lab_point_type>* arr, const size_t& n, std::ofstream& out, size_t (*conv_sort_func)(Point<lab_point_type>*, const size_t&))
 {
   // https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
   auto start = std::chrono::high_resolution_clock::now();
