@@ -59,6 +59,27 @@ void test5()
 {
   std::srand(time(0));
   std::cout << "Rand from -100000 to +100000 -> " << rand_range(-100000.0, 100000.0) << '\n';
+  separate();
+}
+
+void test6()
+{
+  std::srand(time(0));
+  Point<lab_point_type> *arr1, *arr2;
+  std::cout << "Generate type 1 and 2 with q = 100, w = 100, n = 20\n\n";
+  arr1 = generate_array_type_1(100, 100, 20);
+  arr2 = generate_array_type_2(100, 100, 20);
+  std::cout << "arr1 = ";
+  for (size_t i = 0; i < 20; i++)
+    std::cout << arr1[i] << ' ';
+  std::cout << '\n' << '\n';
+  std::cout << "arr2 = ";
+  for (size_t i = 0; i < 20; i++)
+    std::cout << arr2[i] << ' ';
+  std::cout << '\n';
+  delete[] arr1;
+  delete[] arr2;
+  separate();
 }
 
 int main()
@@ -68,6 +89,7 @@ int main()
   test3();
   test4();
   test5();
+  test6();
   std::cout << "all tests done!\n";
   return 0;
 }
